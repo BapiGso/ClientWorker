@@ -1,41 +1,63 @@
 const CACHE_NAME = 'ClientWorkerCache';
-let cachelist = [];
+let cachelist = [
+    //"/"
+]
+
 
 const interceptdomain = [
-    "127.0.0.1:9909",
-    "blog-jsdelivr.cyfan.top"
+    "填写拦截域名"
 ]
 
 
 const proxylist = [
-    "cdn.jsdelivr.net/gh/chenyfan/blog@gh-pages",
-    "cdn.jsdelivr.net/npm/chenyfan-blog@latest",
-    "unpkg.zhimg.com/chenyfan-blog@latest"
-
+    "填写代理域名"
 ]
 
-const website = true
-const handle_error = true
+
 
 self.addEventListener('install', function (installEvent) {
     self.skipWaiting();
     installEvent.waitUntil(
         caches.open(CACHE_NAME)
-            .then(function (cache) {
-                console.log('Opened cache');
-                return cache.addAll(cachelist);
-            })
+            .then(cache => cache.addAll(cachelist))
     );
 });
+
+
+// self.addEventListener('fetch', event => {
+
+//     // path throw a 3xx - don’t cache
+//     if(event.request.url == '{{url}}' ) {
+//         return;
+//     }
+
+// });
 
 
 self.addEventListener('fetch', event => {
     try {
         event.respondWith(handle(event.request))
-    } catch (msg) {
+    }
+    catch (msg) {
         event.respondWith(handleerr(event.request, msg))
     }
 });
+
+// Intercept all outgoing requests from the browser and return cached data if available.
+// self.addEventListener('fetch', function(event) 
+// {
+// 	console.log("Service Worker Version: ", service_worker_version);
+
+// 	event.respondWith(
+// 		caches.match(event.request)
+// 		.then(function(response) 
+// 		{
+// 			return response || fetch(event.request, { redirect: "follow"});
+// 		})
+// 	);
+// });
+
+
 
 const handleerr = async (req, msg) => {
     return new Response(`<h1>ClientWorker用户端错误</h2>
@@ -46,29 +68,8 @@ const handle = async (req) => {
     const urlObj = new URL(urlStr)
     const pathname = urlObj.href.substr(urlObj.origin.length)
     const domain = (urlStr.split('/'))[2]
-    let path = pathname.split("#")[0].split("?")[0]
+    let path = pathname.split("?")[0]
     if (interceptdomain.indexOf(domain) !== -1) {
-        if (path.startsWith('/cw-cgi/')) {
-            switch (path.replace('/cw-cgi/', '')) {
-                case 'test':
-                    return new Response('OK')
-                case 'ws':
-                    return new Response('WebSocket Will Be Never Supported.')
-                default:
-                    return new Response(`<h1>ClientWorker用户端信息</h2>
-                    <h2>拦截域名</h2>
-                    ${(() => { let p = ''; for (var i in interceptdomain) { p += "<li>"; p += interceptdomain[i]; p += "</li>" } return p })()}
-                    <h2>负载地址</h2>
-                    ${(() => { let p = ''; for (var i in proxylist) { p += "<li>"; p += proxylist[i]; p += "</li>" } return p })()}
-                    <h2>自定义处理:</h2>
-                    <h3>站点模式:</h3>
-                    <b>${website ? "已开启" : "已关闭"}</b><br>
-                    <h3>错误代码劫持:</h3>
-                    <b>${website ? "已开启" : "已关闭"}</b>`
-                        , { headers: { "content-type": "text/html; charset=utf-8" } })
-
-            }
-        }
         return custom(req)
     } else {
         return fetch(req)
@@ -82,33 +83,41 @@ const custom = async (req) => {
     const urlObj = new URL(urlStr)
     const pathname = urlObj.href.substr(urlObj.origin.length)
     const domain = (urlStr.split('/'))[2]
-    let path = pathname.split("#")[0].split("?")[0]
-
-    if (website && path.endsWith('/')) { path += "index.html" }
+    let path = pathname.split("?")[0]
     let n = ""
     for (var i in proxylist) {
         try {
             n = await fetch(`https://${proxylist[i]}${path}${urlObj.search}`, {
+                headers: req.headers,
                 method: req.method,
-                body: req.body
+                body: req.body,
+                cookies: req.cookies,
+                //mode: req.mode,
+                //credentials: req.credentials,
+                cache: req.cache,
+                status: req.status,
+                statusText: req.statusText,
+                redirect: req.redirect,
+                referrer: req.referrer
             });
             break;
         } catch (p) {
             continue;
         }
-
     }
+
     if (n === "") {
         return new Response(`<h1>ClientWorker服务端错误</h2>
         <b>所有的负载均失效，请联系网站管理员恢复</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
     }
-    if (n.status >= 400 && handle_error) {
+    if (n.status >= 400) {
         return new Response(`<h1>ClientWorker服务端错误</h2>
         <b>错误代码：${n.status}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
     }
-    if (website && path.endsWith('.html') && n.headers.get('content-type').match('text/plain')) {
-        return new Response(await n.text(), { headers: { "content-type": "text/html; charset=utf-8" } })
-    } else {
+    // if (website && path.endsWith('.html') && n.headers.get('content-type').match('text/plain')) {
+    //     return new Response(await n.text(), { headers: { "content-type": "text/html; charset=utf-8" } })
+    // } 
+    else {
         return n
     }
 }
