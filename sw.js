@@ -5,12 +5,12 @@ let cachelist = [
 
 
 const interceptdomain = [
-    "填写拦截域名"
+    "smoe.cc"
 ]
 
 
 const proxylist = [
-    "填写代理域名"
+    "81.71.127.42"
 ]
 
 
@@ -60,15 +60,16 @@ self.addEventListener('fetch', event => {
 
 
 const handleerr = async (req, msg) => {
-    return new Response(`<h1>ClientWorker用户端错误</h2>
+    return new Response(`<h1>ClientWorker用户端错误</h1>
     <b>${msg}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
 }
+
 const handle = async (req) => {
-    const urlStr = req.url
-    const urlObj = new URL(urlStr)
+    const urlStr   = req.url
+    const urlObj   = new URL(urlStr)
     const pathname = urlObj.href.substr(urlObj.origin.length)
-    const domain = (urlStr.split('/'))[2]
-    let path = pathname.split("?")[0]
+    const domain   = (urlStr.split('/'))[2]
+    let path       = pathname.split('?')[0]
     if (interceptdomain.indexOf(domain) !== -1) {
         return custom(req)
     } else {
@@ -79,26 +80,31 @@ const handle = async (req) => {
 
 
 const custom = async (req) => {
-    const urlStr = req.url
-    const urlObj = new URL(urlStr)
+    const requestClone = req.clone();
+    const urlStr   = req.url
+    const urlObj   = new URL(urlStr)
     const pathname = urlObj.href.substr(urlObj.origin.length)
-    const domain = (urlStr.split('/'))[2]
-    let path = pathname.split("?")[0]
-    let n = ""
+    const domain   = (urlStr.split('/'))[2]
+    let path       = pathname.split('?')[0]
+    let n          = ""
     for (var i in proxylist) {
         try {
             n = await fetch(`https://${proxylist[i]}${path}${urlObj.search}`, {
-                headers: req.headers,
-                method: req.method,
+                headers: {
+                    "content-type": "application/x-www-form-urlencoded"
+                    
+                },
                 body: req.body,
-                cookies: req.cookies,
-                //mode: req.mode,
-                //credentials: req.credentials,
-                cache: req.cache,
-                status: req.status,
-                statusText: req.statusText,
-                redirect: req.redirect,
-                referrer: req.referrer
+                method: req.method,
+                //cookies: req.cookies
+                mode: "cors",
+                referrer: req.referrer,
+                referrerPolicy :req.referrerPolicy,
+                credentials: "omit",//从不发送cookies.
+                //cache: req.cache,
+                //status: req.status,
+                //statusText: req.statusText,
+                redirect: "follow"
             });
             break;
         } catch (p) {
@@ -106,18 +112,19 @@ const custom = async (req) => {
         }
     }
 
-    if (n === "") {
-        return new Response(`<h1>ClientWorker服务端错误</h2>
-        <b>所有的负载均失效，请联系网站管理员恢复</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
-    }
-    if (n.status >= 400) {
-        return new Response(`<h1>ClientWorker服务端错误</h2>
-        <b>错误代码：${n.status}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
-    }
+    // if (n === "") {
+    //     return new Response(`<h1>ClientWorker服务端错误</h2>
+    //     <b>所有的负载均失效，请联系网站管理员恢复</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
+    // }
+    // if (n.status >= 400) {
+    //     return new Response(`<h1>ClientWorker服务端错误</h2>
+    //     <b>错误代码：${n.status}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
+    // }
     // if (website && path.endsWith('.html') && n.headers.get('content-type').match('text/plain')) {
     //     return new Response(await n.text(), { headers: { "content-type": "text/html; charset=utf-8" } })
     // } 
-    else {
-        return n
-    }
+    // else {
+    //     return n
+    // }
+    return n
 }
