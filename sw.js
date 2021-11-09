@@ -24,16 +24,6 @@ self.addEventListener('install', function (installEvent) {
 });
 
 
-// self.addEventListener('fetch', event => {
-
-//     // path throw a 3xx - don’t cache
-//     if(event.request.url == '{{url}}' ) {
-//         return;
-//     }
-
-// });
-
-
 self.addEventListener('fetch', event => {
     try {
         event.respondWith(handle(event.request))
@@ -43,26 +33,12 @@ self.addEventListener('fetch', event => {
     }
 });
 
-// Intercept all outgoing requests from the browser and return cached data if available.
-// self.addEventListener('fetch', function(event) 
-// {
-// 	console.log("Service Worker Version: ", service_worker_version);
-
-// 	event.respondWith(
-// 		caches.match(event.request)
-// 		.then(function(response) 
-// 		{
-// 			return response || fetch(event.request, { redirect: "follow"});
-// 		})
-// 	);
-// });
-
-
 
 const handleerr = async (req, msg) => {
     return new Response(`<h1>ClientWorker用户端错误</h1>
     <b>${msg}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
 }
+
 
 const handle = async (req) => {
     const urlStr   = req.url
@@ -112,19 +88,14 @@ const custom = async (req) => {
         }
     }
 
-    if (n.status >= 400) {
+    
+    if (n.status >= 400 || n === "") {
+        return new Response(    if (n.status >= 400 || n === "") {
         return new Response(`<h1>ClientWorker服务端错误</h2>
         <b>错误代码：${n.status}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
+    }`, { headers: { "content-type": "text/html; charset=utf-8" } })
     }
-    if (n === "") {
-        return new Response(`<h1>ClientWorker服务端错误</h2>
-        <b>所有的负载均失效，请联系网站管理员恢复</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
-    }
-    // if (website && path.endsWith('.html') && n.headers.get('content-type').match('text/plain')) {
-    //     return new Response(await n.text(), { headers: { "content-type": "text/html; charset=utf-8" } })
-    // } 
     else {
         return n
     }
-    //return n
 }
