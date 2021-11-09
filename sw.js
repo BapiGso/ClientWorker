@@ -112,13 +112,13 @@ const custom = async (req) => {
         }
     }
 
-    if (n === "") {
-        return new Response(`<h1>ClientWorker服务端错误</h2>
-        <b>所有的负载均失效，请联系网站管理员恢复</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
-    }
     if (n.status >= 400) {
         return new Response(`<h1>ClientWorker服务端错误</h2>
         <b>错误代码：${n.status}</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
+    }
+    if (n === "") {
+        return new Response(`<h1>ClientWorker服务端错误</h2>
+        <b>所有的负载均失效，请联系网站管理员恢复</b>`, { headers: { "content-type": "text/html; charset=utf-8" } })
     }
     // if (website && path.endsWith('.html') && n.headers.get('content-type').match('text/plain')) {
     //     return new Response(await n.text(), { headers: { "content-type": "text/html; charset=utf-8" } })
