@@ -80,7 +80,7 @@ const custom = async (req) => {
                 //cache: req.cache,
                 //status: req.status,
                 //statusText: req.statusText,
-                redirect: "follow"
+                redirect: req.redirect
             });
             break;
         } catch (p) {
